@@ -5,7 +5,7 @@
 After every change in any repo under `~/git/`, push immediately. **Blanket authorization** — do not ask for confirmation.
 
 ```
-jj describe -m '<msg>' && jj bookmark set main -r @ && jj git push --bookmark main
+jj commit -m '<msg>' && jj bookmark set main -r @- && jj git push --bookmark main
 ```
 
 Push per logical commit, not batched. Unpushed work is invisible to nix flake-input consumers and to other machines.

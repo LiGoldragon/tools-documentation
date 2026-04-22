@@ -77,6 +77,14 @@ nix flake lock --override-input nixpkgs github:criome/nixpkgs/<rev>
 
 This rewrites the `nixpkgs` entry in `flake.lock` while `flake.nix` still says `github:NixOS/nixpkgs?ref=nixos-unstable`. Our CriomOS / mentci-* flakes do exactly this: nixpkgs is pinned to `criome/nixpkgs` at a known rev in `flake.lock`, and any machine can re-pin by running `nix flake lock --override-input` again. Verify it took by inspecting `flake.lock` (look for the `locked` block under the input).
 
+To reuse the rev another flake already pins — without ever typing a hash — use `--inputs-from`:
+
+```
+nix flake lock --inputs-from path:/home/you/git/sibling-flake
+```
+
+This resolves any inputs that match names in the sibling flake using the sibling's locked entries. Handy when you hoist a transitive input to the top level and want it to stay in sync with a consumer flake's lock.
+
 ## Dev shells
 
 `devshells/default.nix` (with blueprint):
