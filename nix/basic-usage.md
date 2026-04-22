@@ -1,7 +1,7 @@
 ---
 source: (our own — synthesized from nix.dev manual, home-manager manual, numtide/blueprint README)
 fetched: 2026-04-22
-trimmed: skipped NixOS module system internals, overlays, channels, writing derivations, nixpkgs contribution workflow
+trimmed: skipped NixOS module system internals, overlays, channels, writing derivations, nixpkgs contribution workflow; nix-language code blocks (this file is the CLI reference)
 ---
 
 # Nix + flakes + home-manager basic usage
@@ -15,21 +15,9 @@ Nix builds things deterministically from expressions. Given the same inputs, you
 
 Think "`Cargo.toml` + lockfile, for everything, not just Rust". The lock is machine-generated; you commit it.
 
-## Flake file structure
+`flake.lock` is generated; never hand-edit.
 
-`flake.nix`:
-
-```nix
-{
-  description = "...";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
-  outputs = { self, nixpkgs, ... }: { /* ... */ };
-}
-```
-
-`flake.lock` — generated; never hand-edit.
-
-### Blueprint layout (what we use)
+## Blueprint layout (what we use)
 
 `numtide/blueprint` auto-maps folders to outputs so `flake.nix` stays tiny:
 
@@ -39,16 +27,6 @@ Think "`Cargo.toml` + lockfile, for everything, not just Rust". The lock is mach
 | `devshells/`  | `devShells.<system>.*`                             |
 | `modules/`    | `nixosModules.*` / `darwinModules.*`               |
 | `hosts/`      | `nixosConfigurations.*` / `darwinConfigurations.*` |
-
-Minimal `flake.nix` with blueprint:
-
-```nix
-{
-  inputs.blueprint.url = "github:numtide/blueprint";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
-  outputs = inputs: inputs.blueprint { inherit inputs; };
-}
-```
 
 ## Day-to-day commands
 
@@ -87,48 +65,18 @@ This resolves any inputs that match names in the sibling flake using the sibling
 
 ## Dev shells
 
-`devshells/default.nix` (with blueprint):
+`nix develop` drops you into the default devshell (blueprint: `devshells/default.nix`). `nix develop .#<name>` for a named one. With direnv: drop `use flake` into `.envrc` and `direnv allow` — shell auto-loads on `cd`.
 
-```nix
-{ pkgs, ... }: pkgs.mkShell {
-  packages = [ pkgs.ripgrep pkgs.jq ];
-  shellHook = ''echo "hi"'';
-}
+## Home-manager
+
+```
+home-manager switch --flake .#<name>       # apply config
+home-manager generations                    # list past generations
+home-manager expire-generations "-7 days"   # cleanup old generations
+home-manager news                           # upstream news since last build
 ```
 
-`nix develop` drops you in. With direnv: drop `use flake` into `.envrc` and `direnv allow` — shell auto-loads on `cd`.
-
-## Home-manager essentials
-
-Modules receive the standard attrset:
-
-```nix
-{ lib, pkgs, config, ... }: {
-  home.packages = [ pkgs.ripgrep pkgs.fd ];
-
-  home.sessionVariables.EDITOR = "hx";   # shells only — see caveat
-
-  home.file.".config/foo/bar".text = "...";      # literal path under $HOME
-  xdg.configFile."foo/bar".text = "...";         # under $XDG_CONFIG_HOME
-
-  systemd.user.services.syncthing = { /* Unit/Service/Install */ };
-  systemd.user.timers.backup      = { /* OnCalendar etc */ };
-
-  home.activation.linkStuff = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    # runs on every `home-manager switch`
-  '';
-}
-```
-
-**Caveat: `home.sessionVariables` only reaches shells** — it's written to `hm-session-vars.sh`, sourced by your shell init. GUI apps launched from your DE don't see it. For GUI-reachable env, use:
-
-```nix
-xdg.configFile."environment.d/10-editor.conf".text = ''
-  EDITOR=hx
-'';
-```
-
-systemd reads `~/.config/environment.d/*.conf` when starting the user session, so GUI apps inherit it.
+**Caveat: `home.sessionVariables` only reaches shells** — written to `hm-session-vars.sh`, sourced by shell init. GUI apps launched from your DE don't see it. Route GUI-reachable env through `xdg.configFile."environment.d/<name>.conf"` instead — systemd reads `~/.config/environment.d/*.conf` when starting the user session, so GUI apps inherit it.
 
 ## Debugging builds
 
