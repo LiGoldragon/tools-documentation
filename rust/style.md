@@ -203,24 +203,27 @@ Public APIs return `Result<T, Error>` with the crate's own enum.
 discipline the rest of the rules build up. Callers can no longer pattern-
 match on what went wrong.
 
-## Concurrency: supervised actors with ractor
+## Actors: logical units with ractor
 
-Multi-step transformations, long-running orchestrations, and concurrent
-task execution go through supervised actors. The framework is
-[`ractor`](https://crates.io/crates/ractor).
+The reason to use actors is **logical cohesion, coherence, and
+consistency** — not performance. An actor is the unit you reach for
+when you want to model a coherent component: it owns its state,
+exposes a typed message protocol, and has a defined lifecycle. The
+framework is [`ractor`](https://crates.io/crates/ractor).
 
-- **Messages are typed.** Each actor's message type is its own enum
-  (one variant per request kind). No untyped channels, no
-  `Box<dyn Any>`.
+- **Messages are typed.** Each actor's message type is its own enum,
+  one variant per request kind. No untyped channels.
+- **State is owned, not shared.** The actor's state lives inside the
+  actor and is mutated only by its message handlers. `Arc<Mutex<T>>`
+  shared between actors is a smell — send a message to whoever owns
+  the state.
 - **Supervision is recursive.** An actor that spawns sub-actors
-  supervises them — failures escalate; the parent decides restart vs
-  shutdown. Don't spawn detached tasks.
-- **State is private.** An actor's state is owned by the actor and
-  mutated only inside its message handlers. Don't share state across
-  actors via `Arc<Mutex<T>>` — pass a message instead.
-- **Async I/O elsewhere is fine.** A method that just awaits an HTTP
-  call doesn't need an actor. The bar is *multi-step* or *concurrent*
-  work that needs lifecycle and failure handling.
+  supervises them. Failures escalate; the parent decides restart vs
+  shutdown. No detached tasks.
+- **Use actors for components, not for chores.** A function that
+  awaits an HTTP call is a method, not an actor. An actor exists
+  because the *concept* it models warrants its own state and
+  protocol.
 
 ## Module layout
 
