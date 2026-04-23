@@ -262,6 +262,30 @@ is just the runtime.
 Plain sync code is fine for one-shot CLIs, build tools, and
 library crates with no concurrent state.
 
+## One Rust crate per repo
+
+Rust crates live in their own dedicated repos and are consumed via flake
+inputs. Don't inline a Rust crate inside a non-Rust repo (e.g. under a
+NixOS-platform repo's `packages/`).
+
+```
+# Right
+github:LiGoldragon/clavifaber       — its own repo
+github:LiGoldragon/brightness-ctl   — its own repo
+github:LiGoldragon/horizon-rs       — its own workspace repo
+
+# Wrong
+CriomOS/packages/brightness-ctl/    — Rust crate inlined in a Nix repo
+```
+
+Why: a Rust crate has its own toolchain pin, its own Cargo lockfile, its
+own test surface, its own release cadence, and its own style obligations.
+Inlining one inside a heterogeneous repo couples those concerns to the
+host repo's churn for no gain. Consume via flake input instead.
+
+A workspace of related Rust crates (e.g. lib + cli) belongs in **one** repo
+together. The split is per *project*, not per crate.
+
 ## Module layout
 
 One concern per file. Typical crate:
