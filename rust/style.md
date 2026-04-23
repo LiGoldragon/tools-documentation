@@ -1,16 +1,9 @@
 ---
-source: (our own — synthesized from `~/git/Mentci/CLAUDE.md` and the practiced
-  style across `~/git/Mentci/components/{aski-core,corec,askic,askicc,arbor,bibliotheca,...}/src/`)
+source: (our own)
 fetched: 2026-04-23
-trimmed: dropped framework-specific concepts that aren't actually used in
-  practice (actor frameworks, esoteric naming conventions, language-internal
-  terminology); kept rules that the live code follows
 ---
 
 # Rust style
-
-The shape Rust takes in our repos. Follow it for new code; new files in
-existing crates should look like the existing files.
 
 ## The rules in one sentence
 
@@ -25,11 +18,11 @@ struct.
 
 ```rust
 // Wrong
-pub fn parse_item_details(json: &str, md5: &str) -> Result<ItemDetails, Error> { … }
+pub fn parse_cert(pem: &str) -> Result<Cert, Error> { … }
 
 // Right
-impl ItemDetails {
-    pub fn from_json(json: &str, md5: &str) -> Result<Self, Error> { … }
+impl Cert {
+    pub fn from_pem(pem: &str) -> Result<Self, Error> { … }
 }
 ```
 
@@ -45,15 +38,14 @@ as an identifier is not a `Path`.
 
 ```rust
 // Wrong
-pub fn details(&self, md5: &str) -> Result<ItemDetails, Error> { … }
+pub fn details(&self, md5: &str) -> Result<Item, Error> { … }
 
 // Right
 pub struct Md5([u8; 16]);
-pub fn details(&self, md5: &Md5) -> Result<ItemDetails, Error> { … }
+pub fn details(&self, md5: &Md5) -> Result<Item, Error> { … }
 ```
 
-When you have many name-shaped newtypes, write a one-arm macro for them.
-Pattern from `aski-core/src/lib.rs:22`:
+When you have many name-shaped newtypes, write a one-arm macro for them:
 
 ```rust
 macro_rules! name_newtype {
@@ -66,6 +58,34 @@ name_newtype!(ModuleName);
 name_newtype!(StructName);
 name_newtype!(FieldName);   // distinct from ModuleName, StructName
 ```
+
+## One type per concept — no `-Details` / `-Info` companions
+
+If you find yourself defining `Item` *and* `ItemDetails`, stop. The
+"-Details" or "-Info" suffix paired with a base type is one concept
+fragmented across two types because the base was designed too thin.
+Fix the base type. The same applies to `-Extra`, `-Meta`, `-Full`,
+`-Extended`, `-Raw`/`-Parsed` pairs, and any other suffix that means
+"the real version of the thing next door."
+
+```rust
+// Wrong — two types for one concept
+struct Item { md5: Md5, name: String }
+struct ItemDetails { md5: Md5, name: String, size: u64, mirrors: Vec<Url>, … }
+
+// Right — one Item, complete
+struct Item {
+    md5: Md5,
+    name: String,
+    size: u64,
+    mirrors: Vec<Url>,
+    …
+}
+```
+
+If different *call sites* genuinely need different *projections*, model
+that with a method that returns a smaller view (`item.summary()`), not
+with a parallel type.
 
 ## One object in, one object out
 
@@ -108,10 +128,9 @@ impl SearchResponse {
 | `From<T>`      | infallible conversion from another type.                       |
 | `TryFrom<T>`   | fallible conversion. Pair with `Error` enum.                   |
 
-We don't have a settled choice between `from_*` returning `Result` and
-implementing `TryFrom`. Prefer `TryFrom` when the conversion has one
-canonical source type; prefer `from_<src>(…) -> Result<Self, Error>`
-when there are several plausible sources or extra args.
+Prefer `TryFrom` when the conversion has one canonical source type;
+prefer `from_<src>(…) -> Result<Self, Error>` when there are several
+plausible sources or extra args.
 
 ## Use existing trait domains
 
@@ -149,7 +168,6 @@ structured (carry the data needed to render a useful message).
 impls handle conversions from foreign error types.
 
 ```rust
-// arbor/src/error.rs (pattern)
 #[derive(Debug, Clone)]
 pub enum Error {
     ChunkNotFound(Hash),
@@ -161,7 +179,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::ChunkNotFound(h)        => write!(f, "chunk not found: {}", hex(h)),
+            Error::ChunkNotFound(h)         => write!(f, "chunk not found: {}", hex(h)),
             Error::DeserializationFailed(m) => write!(f, "deserialization failed: {m}"),
             Error::InvalidNode(m)           => write!(f, "invalid node: {m}"),
             Error::MergeConflict { key }    => write!(f, "merge conflict on key ({} bytes)", key.len()),
@@ -170,7 +188,6 @@ impl fmt::Display for Error {
 }
 impl std::error::Error for Error {}
 
-// When wrapping foreign errors:
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self { Error::Network(e) }
 }
@@ -178,10 +195,6 @@ impl From<reqwest::Error> for Error {
 
 Public APIs return `Result<T, Error>` with the crate's own enum.
 **Never** `Result<T, Box<dyn Error>>` and **never** `anyhow::Result`.
-
-`Result<T, String>` is acceptable only inside a bootstrap tool with no
-dependencies (corec). Don't reach for it elsewhere — if you find
-yourself wanting it, write the enum.
 
 ## Module layout
 
@@ -192,30 +205,26 @@ src/
 ├── lib.rs        # re-exports + crate-level doc (//!)
 ├── error.rs      # Error enum + impls
 ├── types.rs      # domain newtypes + small structs
-├── <thing>.rs    # one file per major type / subsystem (client.rs, store.rs, …)
+├── <thing>.rs    # one file per major type / subsystem
 └── main.rs       # only if the crate is a binary; only free fn lives here
 ```
 
-Impls live in the same file as the type they're for. We don't split
-types and impls across files (no `tree.rs` + `tree_impl.rs`).
+Impls live in the same file as the type they're for. Don't split types
+and impls across files.
 
 ## Cargo.toml
 
-- `edition = "2021"`. (No 2024 edition use yet in core crates.)
-- No workspace root. Each repo is standalone; meta-repos use symlinks
-  / submodules, not Cargo workspaces.
-- Default deps for serialization: `rkyv` (for binary contracts inside
-  the aski pipeline), `serde` + `serde_json` (only at JSON boundaries
-  where consumers need it).
-- `tokio` only where async I/O actually matters (HTTP). Don't introduce
-  it speculatively. `#[tokio::main]` is fine in a binary that needs it.
-- Forbidden by convention: `thiserror`, `anyhow`, `eyre`. We write
-  errors by hand.
+- `edition = "2021"`.
+- No Cargo workspaces. Each repo is standalone.
+- Serialization: `rkyv` for binary contracts inside the aski pipeline;
+  `serde` + `serde_json` only at JSON boundaries where consumers need it.
+- `tokio` only where async I/O actually matters (HTTP).
+- Forbidden by convention: `thiserror`, `anyhow`, `eyre`.
 
 ## Documentation
 
-Doc comments are impersonal, timeless, precise. Document the why and
-the contract; don't restate the signature.
+Doc comments are impersonal, timeless, precise. Document the contract;
+don't restate the signature.
 
 ```rust
 /// Build a balanced prolly tree from sorted key-value pairs.
@@ -225,24 +234,23 @@ the contract; don't restate the signature.
 pub fn build<I>(store: S, bits: u32, sorted: I) -> Result<Self, Error> where … { … }
 ```
 
-Module-level docs go in `//!` at the top of `lib.rs` (crate-level) or
-`///` at the top of a single-purpose module file. Skip docs on obvious
-boilerplate: getters, `From` impls, internal helpers.
+Module-level docs go in `//!` at the top of `lib.rs` or `///` at the top
+of a single-purpose module file. Skip docs on obvious boilerplate:
+getters, `From` impls, internal helpers.
 
 No examples in doc comments unless the API is non-obvious. No personal
-voice ("we do X"). No tense ("will return", "is going to"). Present
-indicative only.
+voice. No future tense. Present indicative only.
 
-## Anti-patterns called out by name
+## Anti-patterns
 
 - **Hand-maintained enum-shaped lists.** If a list of names lives in
   source as `[("U8", 0), ("U16", 0), …]`, you've smuggled data into
-  code. Source it from a data file or generate it. (Acknowledged
-  violation: `aski-core/src/lib.rs:81-105` — the `Primitive::all()`
-  list.)
-- **Naked tuple returns.** Always wrap in a named struct.
+  code. Source it from a data file or generate it.
+- **Naked tuple returns.** Wrap in a named struct.
 - **`Result<T, Box<dyn Error>>`.** Define the enum.
-- **`anyhow::Error`, `thiserror::Error`.** Same — define the enum.
+- **`anyhow::Error`, `thiserror::Error`.** Define the enum.
+- **`-Details` / `-Info` / `-Extra` / `-Meta` / `-Full` / `-Raw` / `-Parsed`
+  suffix on a paired type.** One concept, one type. Fix the base.
 - **Inherent methods that shadow trait domains.** If `FromStr` fits,
   implement `FromStr`.
 - **Free functions outside `main`.** Make it a method.
