@@ -127,9 +127,15 @@ struct SearchPage { html: String, page: u32 }
 impl SearchPage {
     pub fn parse(&self) -> Result<SearchResponse, Error> { … }
 }
+
+// Right — one explicit object alongside self (relational operation)
+impl Tree {
+    pub fn merge(&self, other: Tree) -> Result<Tree, Error> { … }
+}
 ```
 
-`&self` doesn't count as the object argument; it's the receiver.
+`self` is implicit; the rule counts explicit arguments only. A method
+takes zero or one typed object alongside `self`.
 
 ## Constructors are associated functions
 
