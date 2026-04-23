@@ -169,38 +169,31 @@ Prefer `from_*`, `to_*`, `into_*`, `as_*`. Avoid `read`, `write`, `load`,
 `get` / `put` are fine for storage interfaces (`ChunkStore::get`); they
 name the storage operation, not a conversion.
 
-## Errors: typed enum per crate, no anyhow
+## Errors: typed enum per crate via thiserror
 
-Each crate defines its own `Error` enum in `src/error.rs`. Variants are
-structured (carry the data needed to render a useful message). `From`
-impls handle conversions from foreign error types.
-
-`thiserror` is fine for the derive. Manual `impl Display` /
-`impl Error` is also fine. Pick one per crate and stay consistent.
+Each crate defines its own `Error` enum in `src/error.rs`, derived with
+`thiserror`. Variants are structured — carry the data needed to render a
+useful message. Foreign error types convert via `#[from]`.
 
 ```rust
-#[derive(Debug, Clone)]
+use thiserror::Error;
+
+#[derive(Debug, Clone, Error)]
 pub enum Error {
+    #[error("chunk not found: {0}")]
     ChunkNotFound(Hash),
+
+    #[error("deserialization failed: {0}")]
     DeserializationFailed(String),
+
+    #[error("invalid node: {0}")]
     InvalidNode(String),
+
+    #[error("merge conflict on key ({} bytes)", key.len())]
     MergeConflict { key: Vec<u8> },
-}
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::ChunkNotFound(h)         => write!(f, "chunk not found: {}", hex(h)),
-            Error::DeserializationFailed(m) => write!(f, "deserialization failed: {m}"),
-            Error::InvalidNode(m)           => write!(f, "invalid node: {m}"),
-            Error::MergeConflict { key }    => write!(f, "merge conflict on key ({} bytes)", key.len()),
-        }
-    }
-}
-impl std::error::Error for Error {}
-
-impl From<reqwest::Error> for Error {
-    fn from(e: reqwest::Error) -> Self { Error::Network(e) }
+    #[error("network: {0}")]
+    Network(#[from] reqwest::Error),
 }
 ```
 
@@ -233,8 +226,8 @@ and impls across files.
 - Serialization: `rkyv` for binary contracts inside the aski pipeline;
   `serde` + `serde_json` only at JSON boundaries where consumers need it.
 - `tokio` only where async I/O actually matters (HTTP).
-- Forbidden: `anyhow`, `eyre`. They erase error types at boundaries.
-- `thiserror` is fine.
+- Standard for errors: `thiserror`. Forbidden: `anyhow`, `eyre` —
+  they erase error types at boundaries.
 
 ## Documentation
 
