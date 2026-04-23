@@ -10,6 +10,15 @@ trimmed: dropped federation/shared-server/--global, molecules/formulas/wisps, ga
 
 bd stores issues in a Dolt database under `.beads/` (embedded mode: no separate server; bd opens the DB directly). The DB has git-like history — commits, branches, push/pull — so your issue log is versioned. bd commands are CLI for that DB: create, list, update, close, dep-graph, sync.
 
+## bd vs files — when each is the right home
+
+**Rule:** bd is for short tracked items (issues, tasks, workflow state); designs and long-form content live in files in the repo.
+
+- One-paragraph fit → bd issue.
+- Multi-section design / survey / report → file in `reports/`, `docs/`, or the crate's directory.
+- bd entries summarize and point at the file. Don't paste prose into `--description` or `--notes`; that's the wrong storage for prose.
+- Cross-reference: a bd issue's description links to the design file by path; the design file references bd issue IDs for the tracked work.
+
 ## Setup
 
 In a fresh repo (this is what you want for a jj-colocated project):
