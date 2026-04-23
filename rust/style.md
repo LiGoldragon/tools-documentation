@@ -45,19 +45,34 @@ pub struct Md5([u8; 16]);
 pub fn details(&self, md5: &Md5) -> Result<Item, Error> { … }
 ```
 
-When you have many name-shaped newtypes, write a one-arm macro for them:
+**The wrapped field is private.** A `pub` field exposes the primitive
+and defeats every reason to wrap it: callers can construct unchecked
+values and read the raw bytes back out.
 
 ```rust
-macro_rules! name_newtype {
-    ($name:ident) => {
-        #[derive(Archive, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-        pub struct $name(pub String);
-    };
+// Wrong — pub field, the type is just a label
+pub struct NodeName(pub String);
+
+// Right — field private; construction and access go through methods
+pub struct NodeName(String);
+
+impl NodeName {
+    pub fn new(s: impl Into<String>) -> Self { Self(s.into()) }   // or TryFrom if validated
 }
-name_newtype!(ModuleName);
-name_newtype!(StructName);
-name_newtype!(FieldName);   // distinct from ModuleName, StructName
+
+impl AsRef<str> for NodeName {
+    fn as_ref(&self) -> &str { &self.0 }
+}
 ```
+
+Construction with validation goes through `TryFrom<&str>` (or
+`from_str`) returning the crate's `Error`.
+
+**Don't paper over many name-newtypes with a macro.** Each domain type
+will grow its own validation, conversions, and traits. A one-arm macro
+that emits 16 identical `pub struct Foo(pub String)` lines hides the
+absence of that behavior and signals that the types are labels, not
+domain objects. Write them out; let each carry its own impl block.
 
 ## One type per concept — no `-Details` / `-Info` companions
 
@@ -255,3 +270,6 @@ voice. No future tense. Present indicative only.
   implement `FromStr`.
 - **Free functions outside `main`.** Make it a method.
 - **Re-stating signatures in doc comments.** "Returns the foo." Cut it.
+- **`pub` field on a newtype.** Exposes the primitive; defeats the wrap.
+- **Macro that emits N identical newtypes.** Hides the absence of
+  per-type behavior; write them out.
