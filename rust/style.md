@@ -249,12 +249,18 @@ framework is [`ractor`](https://crates.io/crates/ractor).
   because the *concept* it models warrants its own state and
   protocol.
 
-Before reaching for ractor, consider whether blocking threads +
-channels (`std::sync::mpsc`, `crossbeam::channel`) already model
-the shape. A single-writer daemon with a thread-per-connection
-often doesn't need actors at all. Ractor runs on tokio; adopting
-it pulls async into the whole binary. Opt in only when the logical
-shape warrants the weight.
+**Ractor is the default** for any component with state and a
+message protocol. The per-actor overhead is negligible on modern
+hardware, and the discipline (typed messages, owned state,
+supervision trees) pays back immediately — you never end up
+retrofitting concurrency later. Ractor pulls tokio in; that's
+acceptable everywhere, which is why "`tokio` only where async
+I/O actually matters" above is a historical constraint being
+relaxed: for daemons and structured services, tokio via ractor
+is just the runtime.
+
+Plain sync code is fine for one-shot CLIs, build tools, and
+library crates with no concurrent state.
 
 ## Module layout
 
@@ -285,8 +291,9 @@ and impls across files.
   components (storage, zero-copy reads); `serde` for wire-format
   round-trips (e.g., `nexus-serde`, JSON at external boundaries).
   Both derives can coexist on the same type when needed.
-- `tokio` only where async I/O actually matters (HTTP). Blocking
-  threads + sync I/O are the default for daemons and CLIs.
+- `tokio` comes in automatically via ractor for any service with
+  concurrent state. Plain sync is fine for one-shot CLIs and
+  library crates.
 - Standard for errors: `thiserror`. Forbidden: `anyhow`, `eyre` —
   they erase error types at boundaries.
 
