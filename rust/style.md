@@ -228,7 +228,7 @@ and impls across files.
 
 ## Cargo.toml
 
-- `edition = "2021"`.
+- `edition = "2024"`.
 - No Cargo workspaces. Each repo is standalone.
 - Serialization: `rkyv` for binary contracts inside the aski pipeline;
   `serde` + `serde_json` only at JSON boundaries where consumers need it.
