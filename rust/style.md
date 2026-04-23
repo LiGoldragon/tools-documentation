@@ -396,6 +396,19 @@ description + pname):
 }
 ```
 
+**Canonical `rust-toolchain.toml`.** Pair the flake's
+`fenix.stable` with `channel = "stable"` so rustup users (not
+using nix develop) track the same floating reference. Pin an
+explicit version (e.g. `"1.85"`) only at release time when
+reproducibility across rust versions matters.
+
+```toml
+[toolchain]
+channel = "stable"
+components = ["cargo", "rustc", "rustfmt", "clippy", "rust-analyzer", "rust-src"]
+profile = "default"
+```
+
 **Commit `Cargo.lock`.** The flake reads it to vendor
 dependencies. Without it, `nix flake check` fails.
 
