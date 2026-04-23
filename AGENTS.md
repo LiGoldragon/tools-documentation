@@ -20,6 +20,9 @@ Curated daily-use docs for the tools Li works with. Read these before assuming h
 - [jj/basic-usage.md](jj/basic-usage.md) — jj (Jujutsu) daily loop: `@` model, commit/describe distinction, push, undo, bookmarks, remotes.
 - [nix/basic-usage.md](nix/basic-usage.md) — Nix flakes + home-manager: blueprint layout, lock-side pinning, devshells, `nix log`, home-manager primitives (env vars caveat for GUI apps).
 
+**Language style:**
+- [rust/style.md](rust/style.md) — Rust object style: methods on types not free fns, typed newtypes for domain values, single-object I/O at boundaries, manual `Error` enums (no thiserror/anyhow), trait-domain rule, doc protocol.
+
 **Data / issues:**
 - [bd/basic-usage.md](bd/basic-usage.md) — bd (beads) daily loop: init --skip-hooks --skip-agents, create/ready/close, dependencies, dolt push/pull.
 - [dolt/basic-usage.md](dolt/basic-usage.md) — Dolt SQL daily loop: dual CLI+SQL interfaces, branch/commit/merge of tables, remotes + DoltHub, auth.
