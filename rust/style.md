@@ -169,12 +169,14 @@ Prefer `from_*`, `to_*`, `into_*`, `as_*`. Avoid `read`, `write`, `load`,
 `get` / `put` are fine for storage interfaces (`ChunkStore::get`); they
 name the storage operation, not a conversion.
 
-## Errors: enum + manual impls, no thiserror, no anyhow
+## Errors: typed enum per crate, no anyhow
 
 Each crate defines its own `Error` enum in `src/error.rs`. Variants are
-structured (carry the data needed to render a useful message).
-`fmt::Display` and `std::error::Error` are implemented by hand. `From`
+structured (carry the data needed to render a useful message). `From`
 impls handle conversions from foreign error types.
+
+`thiserror` is fine for the derive. Manual `impl Display` /
+`impl Error` is also fine. Pick one per crate and stay consistent.
 
 ```rust
 #[derive(Debug, Clone)]
@@ -203,7 +205,10 @@ impl From<reqwest::Error> for Error {
 ```
 
 Public APIs return `Result<T, Error>` with the crate's own enum.
-**Never** `Result<T, Box<dyn Error>>` and **never** `anyhow::Result`.
+**Never** `anyhow::Result`, `eyre::Result`, or `Result<T, Box<dyn Error>>`
+— they erase the error type at the boundary, which loses the typed-failure
+discipline the rest of the rules build up. Callers can no longer pattern-
+match on what went wrong.
 
 ## Module layout
 
@@ -228,7 +233,8 @@ and impls across files.
 - Serialization: `rkyv` for binary contracts inside the aski pipeline;
   `serde` + `serde_json` only at JSON boundaries where consumers need it.
 - `tokio` only where async I/O actually matters (HTTP).
-- Forbidden by convention: `thiserror`, `anyhow`, `eyre`.
+- Forbidden: `anyhow`, `eyre`. They erase error types at boundaries.
+- `thiserror` is fine.
 
 ## Documentation
 
