@@ -100,7 +100,15 @@ with a parallel type.
 
 Method signatures take at most one explicit object argument and return
 exactly one object. When inputs or outputs need more, define a struct.
-Naked tuples are not return types.
+
+**Anonymous tuples are not used at type boundaries** — not as return
+types, not as parameter types, not as struct fields, not in type
+aliases. The exception is **tuple newtypes**: `struct Md5([u8; 16])`,
+`struct NodeName(String)`. They use tuple syntax to wrap a single
+thing, but the wrapper itself is a named type — that's how typed
+newtypes are spelled and is the whole point. Local destructuring like
+`let (a, b) = pair;` against a tuple-newtype's inner is fine; the rule
+is about type-level appearances of unnamed tuples.
 
 The verb is the method name; the noun is the type. Don't smuggle the
 verb into the type name (`DownloadRequest` + `download_url(req)`) —
