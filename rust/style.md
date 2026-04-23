@@ -68,12 +68,6 @@ impl AsRef<str> for NodeName {
 Construction with validation goes through `TryFrom<&str>` (or
 `from_str`) returning the crate's `Error`.
 
-**Don't paper over many name-newtypes with a macro.** Each domain type
-will grow its own validation, conversions, and traits. A one-arm macro
-that emits 16 identical `pub struct Foo(pub String)` lines hides the
-absence of that behavior and signals that the types are labels, not
-domain objects. Write them out; let each carry its own impl block.
-
 ## One type per concept — no `-Details` / `-Info` companions
 
 If you find yourself defining `Item` *and* `ItemDetails`, stop. The
@@ -270,6 +264,3 @@ voice. No future tense. Present indicative only.
   implement `FromStr`.
 - **Free functions outside `main`.** Make it a method.
 - **Re-stating signatures in doc comments.** "Returns the foo." Cut it.
-- **`pub` field on a newtype.** Exposes the primitive; defeats the wrap.
-- **Macro that emits N identical newtypes.** Hides the absence of
-  per-type behavior; write them out.
