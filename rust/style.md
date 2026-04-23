@@ -278,6 +278,35 @@ src/
 Impls live in the same file as the type they're for. Don't split types
 and impls across files.
 
+## Tests live in separate files
+
+Unit tests do **not** go in a `#[cfg(test)] mod tests` block at the bottom
+of the source file. They live in a sibling file under `tests/` at the
+crate root, named for the module they exercise.
+
+```
+src/
+├── cert.rs
+├── tree.rs
+└── error.rs
+tests/
+├── cert.rs      # integration tests for Cert
+└── tree.rs      # integration tests for Tree
+```
+
+This keeps the source file focused on behavior, lets the test file grow
+without bloating the source file, and forces tests to exercise the
+public API (integration tests can't reach private items — which is the
+right pressure: if something is hard to test from outside, the API
+needs work, not the test). Private-helper tests are rare and can go in
+a small `tests_internal` module with a clear boundary; if you find
+yourself reaching for many, that's a signal the helper wants to be its
+own type with a public constructor.
+
+One test file per source file. Don't collect tests from multiple
+modules into a single `tests/common.rs` unless the shared fixtures
+genuinely apply to more than one module.
+
 ## Cargo.toml
 
 - `edition = "2024"`.

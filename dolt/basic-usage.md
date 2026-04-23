@@ -87,12 +87,14 @@ dolt pull origin main
 dolt clone ligoldragon/mydb
 ```
 
-DoltHub shorthand expands to `https://doltremoteapi.dolthub.com/<owner>/<db>`. For a **git-remote mode** (store dolt data under a ref in a regular git repo), use an URL with the `git+` prefix or `.git` suffix:
+DoltHub shorthand expands to `https://doltremoteapi.dolthub.com/<owner>/<db>`. For a **git-remote mode** (store dolt data under a ref in a regular git repo), dolt accepts exactly two URL shapes:
 
 ```
-dolt remote add origin git+https://github.com/ORG/REPO.git
-dolt remote add origin git@github.com:ORG/REPO.git
+dolt remote add origin git+https://github.com/ORG/REPO.git   # HTTPS
+dolt remote add origin git@github.com:ORG/REPO.git           # SSH
 ```
+
+The `git+` prefix only pairs with `https://`; SSH is the bare `git@host:ORG/REPO.git` form.
 
 ## Auth
 

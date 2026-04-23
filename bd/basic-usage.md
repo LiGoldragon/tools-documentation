@@ -33,6 +33,8 @@ bd config set export.auto false
 - `--non-interactive` prevents prompts (agent/CI safe).
 - `export.auto false` disables the automatic jsonl export on every write. The jsonl is a GitHub-legible projection of the Dolt DB; agents read the DB directly, so it's just churn.
 
+Embedded-mode data lives at `.beads/embeddeddolt/<dolt_database>/.dolt/` (the path bd opens in-process). `<dolt_database>` is the `dolt_database` field in `.beads/metadata.json` (defaults to the repo name with hyphens → underscores). Directly queryable with `cd .beads/embeddeddolt/<dolt_database> && dolt sql -q "select count(*) from issues"`.
+
 ## Finding work
 
 ```
