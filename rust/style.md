@@ -235,11 +235,13 @@ Doc comments are impersonal, timeless, precise. Document the contract;
 don't restate the signature.
 
 ```rust
-/// Build a balanced prolly tree from sorted key-value pairs.
-///
-/// Bits controls fanout: 2^bits children per chunk. Larger bits → flatter
-/// tree, fewer rewrites on update, more bytes per chunk.
-pub fn build<I>(store: S, bits: u32, sorted: I) -> Result<Self, Error> where … { … }
+impl Cert {
+    /// Issue a server certificate against this CA.
+    ///
+    /// The CA's signing key must be an Ed25519 key resolvable via the
+    /// local GPG agent. The server keypair is ECDSA P-256, generated fresh.
+    pub fn issue_server(&self, request: ServerCertRequest) -> Result<Self, Error> { … }
+}
 ```
 
 Module-level docs go in `//!` at the top of `lib.rs` or `///` at the top
@@ -248,18 +250,3 @@ getters, `From` impls, internal helpers.
 
 No examples in doc comments unless the API is non-obvious. No personal
 voice. No future tense. Present indicative only.
-
-## Anti-patterns
-
-- **Hand-maintained enum-shaped lists.** If a list of names lives in
-  source as `[("U8", 0), ("U16", 0), …]`, you've smuggled data into
-  code. Source it from a data file or generate it.
-- **Naked tuple returns.** Wrap in a named struct.
-- **`Result<T, Box<dyn Error>>`.** Define the enum.
-- **`anyhow::Error`, `thiserror::Error`.** Define the enum.
-- **`-Details` / `-Info` / `-Extra` / `-Meta` / `-Full` / `-Raw` / `-Parsed`
-  suffix on a paired type.** One concept, one type. Fix the base.
-- **Inherent methods that shadow trait domains.** If `FromStr` fits,
-  implement `FromStr`.
-- **Free functions outside `main`.** Make it a method.
-- **Re-stating signatures in doc comments.** "Returns the foo." Cut it.
