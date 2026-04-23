@@ -102,21 +102,30 @@ Method signatures take at most one explicit object argument and return
 exactly one object. When inputs or outputs need more, define a struct.
 Naked tuples are not return types.
 
-```rust
-// Wrong — multiple primitives at the boundary
-fn download_url(&self, md5: &str, path_index: Option<u32>,
-                domain_index: Option<u32>) -> Result<DownloadInfo, Error> { … }
+The verb is the method name; the noun is the type. Don't smuggle the
+verb into the type name (`DownloadRequest` + `download_url(req)`) —
+make it a method on the input (`Request::download`).
 
-// Wrong — naked tuple return
+```rust
+// Wrong — multi-primitive args at the boundary
+fn download_url(&self, md5: &str, path_index: Option<u32>,
+                domain_index: Option<u32>) -> Result<Download, Error> { … }
+
+// Wrong — free function with tuple return
 fn parse_results(html: &str) -> Result<(Vec<SearchResult>, bool), Error> { … }
 
-// Right — typed in, typed out
-struct DownloadRequest { md5: Md5, path_index: Option<u32>, domain_index: Option<u32> }
-fn download_url(&self, request: DownloadRequest) -> Result<DownloadInfo, Error> { … }
+// Right — input is a Request; the verb is a method on it
+struct Request { md5: Md5, path_index: Option<u32>, domain_index: Option<u32> }
 
-// Right — the type knows how to construct itself
-impl SearchResponse {
-    pub fn from_html(html: &str, page: u32) -> Result<Self, Error> { … }
+impl Request {
+    pub fn download(&self) -> Result<Download, Error> { … }
+}
+
+// Right — input is a SearchPage; parse is a method on it
+struct SearchPage { html: String, page: u32 }
+
+impl SearchPage {
+    pub fn parse(&self) -> Result<SearchResponse, Error> { … }
 }
 ```
 
