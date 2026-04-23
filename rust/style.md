@@ -331,6 +331,80 @@ One test file per source file. Don't collect tests from multiple
 modules into a single `tests/common.rs` unless the shared fixtures
 genuinely apply to more than one module.
 
+## Nix-based tests
+
+Every Rust crate in the workspace exposes its test suite as
+`checks.default` in its `flake.nix`. `nix flake check` builds the
+crate and runs `cargo test` inside a pure nix sandbox, which:
+
+- Pins the toolchain to the flake's `fenix` component — no
+  host-rustc drift.
+- Resolves dependencies from a committed `Cargo.lock` — no
+  "works on my machine" gaps.
+- Makes the test invocation self-documenting: any Nix checkout
+  reproduces the exact suite.
+
+Always use `nix flake check` as the canonical pre-commit test
+runner for crates that expose `checks.default`. `cargo test`
+alone skips the reproducibility guarantees.
+
+**Canonical flake layout** (copy-paste for new crates; adjust
+description + pname):
+
+```nix
+{
+  description = "<crate description>";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, flake-utils, fenix }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+        toolchain = fenix.packages.${system}.stable.withComponents [
+          "cargo" "rustc" "rustfmt" "clippy" "rust-analyzer" "rust-src"
+        ];
+        rustPlatform = pkgs.makeRustPlatform {
+          cargo = toolchain;
+          rustc = toolchain;
+        };
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          name = "<crate-name>";
+          packages = [ pkgs.jujutsu pkgs.pkg-config toolchain ];
+        };
+
+        packages.default = rustPlatform.buildRustPackage {
+          pname = "<crate-name>";
+          version = "0.1.0";
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+          doCheck = true;
+        };
+
+        checks.default = self.packages.${system}.default;
+      }
+    );
+}
+```
+
+**Commit `Cargo.lock`.** The flake reads it to vendor
+dependencies. Without it, `nix flake check` fails.
+
+If a bug is found while writing tests, fix the bug *and* keep
+the test. The test documents the invariant; the fix keeps the
+invariant true. A test marked `#[ignore]` with a bd-issue link
+in the reason is acceptable when the fix is out of scope for
+the current work, but don't `#[ignore]` without filing.
+
 ## Cargo.toml
 
 - `edition = "2024"`.
