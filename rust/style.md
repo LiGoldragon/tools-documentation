@@ -228,7 +228,8 @@ match on what went wrong.
 
 ## Actors: logical units with ractor
 
-The reason to use actors is **logical cohesion, coherence, and
+When the daemon grows enough concurrent state to need an actor
+framework, the reason is **logical cohesion, coherence, and
 consistency** — not performance. An actor is the unit you reach for
 when you want to model a coherent component: it owns its state,
 exposes a typed message protocol, and has a defined lifecycle. The
@@ -247,6 +248,13 @@ framework is [`ractor`](https://crates.io/crates/ractor).
   awaits an HTTP call is a method, not an actor. An actor exists
   because the *concept* it models warrants its own state and
   protocol.
+
+Before reaching for ractor, consider whether blocking threads +
+channels (`std::sync::mpsc`, `crossbeam::channel`) already model
+the shape. A single-writer daemon with a thread-per-connection
+often doesn't need actors at all. Ractor runs on tokio; adopting
+it pulls async into the whole binary. Opt in only when the logical
+shape warrants the weight.
 
 ## Module layout
 
@@ -267,12 +275,37 @@ and impls across files.
 ## Cargo.toml
 
 - `edition = "2024"`.
-- No Cargo workspaces. Each repo is standalone.
-- Serialization: `rkyv` for binary contracts inside the aski pipeline;
-  `serde` + `serde_json` only at JSON boundaries where consumers need it.
-- `tokio` only where async I/O actually matters (HTTP).
+- **One crate per repo. No Cargo workspaces.** A workspace is a
+  deployment concern, not a source-layout concern. Each crate that
+  compiles to an artifact (library or binary) lives in its own
+  git repo with its own `Cargo.toml`, `flake.nix`, `rust-toolchain.toml`,
+  `.gitignore`, and `LICENSE.md`. Upstream at
+  `github.com/LiGoldragon/<name>`.
+- Serialization: `rkyv` for binary contracts between our Rust
+  components (storage, zero-copy reads); `serde` for wire-format
+  round-trips (e.g., `nexus-serde`, JSON at external boundaries).
+  Both derives can coexist on the same type when needed.
+- `tokio` only where async I/O actually matters (HTTP). Blocking
+  threads + sync I/O are the default for daemons and CLIs.
 - Standard for errors: `thiserror`. Forbidden: `anyhow`, `eyre` —
   they erase error types at boundaries.
+
+## Cross-crate dependencies
+
+Because each crate lives in its own repo, cross-crate references
+happen at two layers:
+
+- **Local development:** flake inputs. Each repo's `flake.nix`
+  declares its sibling dependencies as inputs; `cargo` resolves them
+  through `path = "..."` pointers populated by the flake's
+  `postUnpack` (or by symlinking during a dev shell).
+- **Published crates:** crates.io version pins. Once a crate is
+  published, consumers can pin to semver ranges instead of tracking
+  the flake.
+
+Do NOT use `path = "../sibling-crate"` directly in a `Cargo.toml` —
+that assumes a layout that a fresh clone won't reproduce. Let the
+flake populate the paths.
 
 ## Documentation
 
