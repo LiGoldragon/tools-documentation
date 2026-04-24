@@ -126,20 +126,37 @@ reproducibility matters.
 
 ## Git-URL deps with crane
 
-Same `cargoLock.outputHashes` story as before, but the field lives on
-`commonArgs` instead of `rustPlatform.buildRustPackage`:
+Crane needs an explicit `cargoVendorDir` (it doesn't accept the
+`cargoLock = { outputHashes = ...; }` shape that
+`rustPlatform.buildRustPackage` does). Build it via
+`craneLib.vendorCargoDeps`, keyed by the **full git URL + revision**
+(not crate-name-version):
 
 ```nix
-commonArgs = {
-  inherit src;
-  strictDeps = true;
-  cargoLockOutputHashes = {
-    "sibling-crate-0.1.0" = "sha256-...";
+let
+  cargoVendorDir = craneLib.vendorCargoDeps {
+    inherit src;
+    outputHashes = {
+      "git+https://github.com/LiGoldragon/horizon-rs#5b134d94ad5377f653fb26eb151ca583f24642fa" =
+        "sha256-SuineiVnWxzd0sCtGsGB+FPCZDIVquC1lgx1qT9plfk=";
+    };
   };
-};
+  commonArgs = {
+    inherit src cargoVendorDir;
+    strictDeps = true;
+  };
+in
+…
 ```
 
-First build fails; nix prints the expected hash. Paste it back in.
+Compute hashes ahead of time with `nix-prefetch-git --quiet --url URL
+--rev REV`, then convert with `nix hash convert --to sri --hash-algo
+sha256 <hash>`. (Or skip them entirely — crane builds fine without,
+but emits a `No output hash provided` warning.)
+
+When you bump `Cargo.lock` to a newer rev for a git dep, **the URL
+key in `outputHashes` must include the new rev** — crane keys by
+`URL#REV`, not `crate-name-version`.
 
 ## Workspace handling
 
