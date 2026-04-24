@@ -454,6 +454,38 @@ Do NOT use `path = "../sibling-crate"` directly in a `Cargo.toml` —
 that assumes a layout that a fresh clone won't reproduce. Let the
 flake populate the paths.
 
+**Git-URL deps + `cargoLock.outputHashes` pattern.** When the sibling
+crate isn't published to crates.io yet but is pushed to GitHub,
+consume it via git URL:
+
+```toml
+# dependent crate's Cargo.toml
+[dependencies]
+sibling-crate = { git = "https://github.com/LiGoldragon/sibling-crate.git" }
+```
+
+Cargo.lock pins the resolved commit. For `nix flake check` to
+fetch the git source inside its sandbox, add an `outputHashes`
+entry in the flake's `cargoLock`:
+
+```nix
+packages.default = rustPlatform.buildRustPackage {
+  ...
+  cargoLock = {
+    lockFile = ./Cargo.lock;
+    outputHashes = {
+      # Bump the hash when the locked rev changes. First run fails;
+      # nix prints the expected sha256 in the "hash mismatch" error.
+      "sibling-crate-0.1.0" = "sha256-...";
+    };
+  };
+};
+```
+
+Used today by nota-serde → nota-serde-core. When the dep is later
+published to crates.io, drop the git URL and remove the
+outputHashes entry; pin by semver range instead.
+
 ## Documentation
 
 Doc comments are impersonal, timeless, precise. Document the contract;
