@@ -333,9 +333,9 @@ genuinely apply to more than one module.
 
 ## Nix-based tests
 
-Every Rust crate in the workspace exposes its test suite as
-`checks.default` in its `flake.nix`. `nix flake check` builds the
-crate and runs `cargo test` inside a pure nix sandbox, which:
+Every Rust crate exposes its test suite as `checks.default` in its
+`flake.nix`. `nix flake check` builds the crate and runs `cargo test`
+inside a pure nix sandbox, which:
 
 - Pins the toolchain to the flake's `fenix` component — no
   host-rustc drift.
@@ -345,78 +345,22 @@ crate and runs `cargo test` inside a pure nix sandbox, which:
   reproduces the exact suite.
 
 Always use `nix flake check` as the canonical pre-commit test
-runner for crates that expose `checks.default`. `cargo test`
-alone skips the reproducibility guarantees.
+runner. `cargo test` alone skips the reproducibility guarantees.
 
-**Canonical flake layout** (copy-paste for new crates; adjust
-description + pname):
+**Canonical flake layout** for new crates (crane + fenix, with
+layered cargo-deps caching so source-only changes recompile in
+seconds): see [nix-packaging.md](nix-packaging.md). The same file
+covers `rust-toolchain.toml`, git-URL deps, workspace handling, and
+`checks.default` wiring.
 
-```nix
-{
-  description = "<crate description>";
+**Commit `Cargo.lock`.** The flake reads it to vendor dependencies.
+Without it, `nix flake check` fails.
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
-
-  outputs = { self, nixpkgs, flake-utils, fenix }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-        toolchain = fenix.packages.${system}.stable.withComponents [
-          "cargo" "rustc" "rustfmt" "clippy" "rust-analyzer" "rust-src"
-        ];
-        rustPlatform = pkgs.makeRustPlatform {
-          cargo = toolchain;
-          rustc = toolchain;
-        };
-      in
-      {
-        devShells.default = pkgs.mkShell {
-          name = "<crate-name>";
-          packages = [ pkgs.jujutsu pkgs.pkg-config toolchain ];
-        };
-
-        packages.default = rustPlatform.buildRustPackage {
-          pname = "<crate-name>";
-          version = "0.1.0";
-          src = ./.;
-          cargoLock.lockFile = ./Cargo.lock;
-          doCheck = true;
-        };
-
-        checks.default = self.packages.${system}.default;
-      }
-    );
-}
-```
-
-**Canonical `rust-toolchain.toml`.** Pair the flake's
-`fenix.stable` with `channel = "stable"` so rustup users (not
-using nix develop) track the same floating reference. Pin an
-explicit version (e.g. `"1.85"`) only at release time when
-reproducibility across rust versions matters.
-
-```toml
-[toolchain]
-channel = "stable"
-components = ["cargo", "rustc", "rustfmt", "clippy", "rust-analyzer", "rust-src"]
-profile = "default"
-```
-
-**Commit `Cargo.lock`.** The flake reads it to vendor
-dependencies. Without it, `nix flake check` fails.
-
-If a bug is found while writing tests, fix the bug *and* keep
-the test. The test documents the invariant; the fix keeps the
-invariant true. A test marked `#[ignore]` with a bd-issue link
-in the reason is acceptable when the fix is out of scope for
-the current work, but don't `#[ignore]` without filing.
+If a bug is found while writing tests, fix the bug *and* keep the
+test. The test documents the invariant; the fix keeps the invariant
+true. A test marked `#[ignore]` with a bd-issue link in the reason is
+acceptable when the fix is out of scope for the current work, but
+don't `#[ignore]` without filing.
 
 ## Cargo.toml
 
