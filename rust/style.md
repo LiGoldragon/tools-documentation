@@ -22,13 +22,58 @@ pub fn parse_cert(pem: &str) -> Result<Cert, Error> { … }
 
 // Right
 impl Cert {
-    pub fn from_pem(pem: &str) -> Result<Self, Error> { … }
+    pub fn from_pem(pem: &str) -> Result<Self, Self::Error> { … }
 }
 ```
 
 A small private helper inside one module is fine if it is genuinely local
 (`fn hex(h: &Hash) -> String` next to a single Display impl). Anything
 that smells reusable becomes a method.
+
+### Why this matters — affordances, not operations
+
+Methods encode **affordances** — what kinds of things a value of this
+type can do. Free functions encode **operations** that happen to take
+some arguments. The distinction is load-bearing.
+
+In the real world, fruits can be eaten and clouds cannot. Code that
+models the world correctly says `fruit.eat()`, not `eat(fruit)`. The
+method form binds the verb to the type that owns it. The free-function
+form lets the verb float — and `eat(cloud)` becomes thinkable, type-
+checked only if you happen to have given `Cloud` an explicit
+"missing eat" marker.
+
+**The deeper consequence**: free functions let the agent SKIP creating
+the type that should own the behavior. If you're tempted to write
+
+```rust
+// Wrong
+pub fn parse_query(text: &str) -> Result<QueryOp, Error> { … }
+```
+
+the rule forces you to ask: *what type owns query parsing?* The answer
+is `QueryParser`, and the rule's pressure makes that type exist:
+
+```rust
+// Right
+pub struct QueryParser<'input> { lexer: Lexer<'input> }
+
+impl<'input> QueryParser<'input> {
+    pub fn new(input: &'input str) -> Self { … }
+    pub fn into_query(self) -> Result<QueryOp, Error> { … }
+}
+```
+
+Without the rule, `QueryParser` never gets created — the verb stays a
+floating free function, the noun that should own it never appears, and
+the model develops gaps. Free functions absorb behavior that should
+belong to typed entities, and the type system can't track affordances
+it doesn't know about. Programs that "look fine" end up missing whole
+structural types they ought to have.
+
+The rule of thumb: **every reusable verb belongs to a noun**. If you
+can't name the noun, you haven't found the right model yet — keep
+looking until you can.
 
 ## Domain values are types, not primitives
 
