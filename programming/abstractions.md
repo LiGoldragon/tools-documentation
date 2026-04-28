@@ -40,6 +40,13 @@ impl<'input> QueryParser<'input> {
 
 The rule is not aesthetic. It is a forcing function.
 
+**Free functions are incorrectly specified verbs.** They encode an
+action without naming the noun that owns it. When you reach for
+one, slow down and find the noun — the type that has the affordance
+this verb describes. If no obvious noun exists, the *model* is
+incomplete; the missing type is what the verb is asking you to
+declare.
+
 ## Affordances vs operations
 
 Methods encode **affordances** — what kinds of things a value of

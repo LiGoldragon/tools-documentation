@@ -645,6 +645,20 @@ packages.default = rustPlatform.buildRustPackage {
 When the dep is later published to crates.io, drop the git URL
 and remove the outputHashes entry; pin by semver range instead.
 
+**Pin strategy — `branch = "main"` during fast development.** Prefer
+`branch = "main"` over `rev = "<sha>"` for sibling deps while
+development is moving fast across the workspace. The lockfile still
+pins by sha (deterministic builds); the Cargo.toml stays stable as
+upstream evolves. `cargo update -p <dep>` bumps the lock when you
+want the latest. When a sibling stabilises and you want frozen
+upstream, switch that one to `rev = "<sha>"` — but the default for
+M0/M1-era cross-crate deps is `branch = "main"`.
+
+```toml
+# Default for fast-moving sibling deps:
+sibling-crate = { git = "https://github.com/LiGoldragon/sibling-crate.git", branch = "main" }
+```
+
 ## Documentation
 
 Doc comments are impersonal, timeless, precise. Document the contract;
