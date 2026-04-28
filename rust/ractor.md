@@ -155,12 +155,26 @@ as `SpawnErr`. Use `?` on fallible startup, never `unwrap`. `post_stop` is
 skipped on `Signal::Kill` and on panic in `handle`; don't put must-run cleanup
 there.
 
+**Mailbox semantics.** Each actor's mailbox is processed in priority order:
+Signals > Stop > SupervisionEvents > user messages. Priority only kicks in
+**between** `handle` invocations — an `await` inside `handle` blocks the
+mailbox entirely; even a `Stop` signal can't preempt, the current handle has
+to return first. Two consequences worth knowing:
+
+- An actor calling `ActorRef::call` on **itself** deadlocks (it's waiting for
+  itself to process the message it just sent). The same goes for any
+  bidirectional `call` cycle in the supervision graph; keep `call` arrows
+  strictly downward.
+- `myself.stop(...)` is async-fire-and-forget — it queues a Stop signal,
+  current handle finishes, then the loop exits. Use `stop_and_wait` if you
+  need to synchronize on the actor having actually exited (rare; usually
+  fire-and-forget is correct).
+
 **State doesn't drop when `handle` returns.** Ractor wraps the exiting actor's
 State in a `BoxedState` and queues it to the supervisor as part of the
 `ActorTerminated` event. The State only drops when the supervisor's mailbox
 processes that event — which can be much later if the supervisor is inside an
-active `await` (mailbox priority only matters *between* iterations, not within
-an active handle).
+active `await` (per *Mailbox semantics* above).
 
 If the State holds a resource that something *external* is waiting on — a
 UnixStream the client is reading from, a TcpStream a peer is waiting on EOF
