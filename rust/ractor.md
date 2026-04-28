@@ -7,17 +7,9 @@ fetched: 2026-04-28
 
 [`ractor`](https://crates.io/crates/ractor) is the actor framework for any
 CANON daemon with state and a message protocol. See [`style.md` §Actors](style.md#actors-logical-units-with-ractor)
-for *when* to reach for one; this doc is *how*. The canonical example is
-[criome](https://github.com/LiGoldragon/criome) — five actors covering every
-shape:
-
-```
-Daemon (root)        src/daemon.rs        spawns subtree, holds refs
-  ├── Engine         src/engine.rs        write side; sync façade
-  ├── Reader × N     src/reader.rs        read pool, MVCC-concurrent
-  └── Listener       src/listener.rs      UDS accept loop
-        └── Connection × M  src/connection.rs   one per client
-```
+for *when* to reach for one; this doc is *how*. For a current working example,
+read the actor files under [criome](https://github.com/LiGoldragon/criome)'s
+`src/` — every pattern below appears there.
 
 ## Cargo.toml
 
@@ -30,9 +22,11 @@ Actor` block needs. Without the feature the macro path doesn't resolve.
 
 ## Four pieces per file, bare-named
 
-File `engine.rs` exports `Engine`, not `EngineActor` — `engine::Engine` already
-reads correctly. Every actor file exports exactly four pieces; `State` fields
-stay private (mutate via `Message`, not by reaching in):
+One actor per file. The bare noun is the actor; the module path is the
+qualifier. A file `engine.rs` exports `Engine`, not `EngineActor` —
+`engine::Engine` already reads correctly. Every actor file exports exactly
+four pieces; `State` fields stay private (mutate via `Message`, not by
+reaching in):
 
 ```rust
 pub struct Engine;            // ZST behaviour marker
@@ -45,15 +39,14 @@ pub enum Message { ... }      // per-verb typed messages
 
 One variant per verb. Each RPC variant carries its own typed `RpcReplyPort<T>`.
 No god `HandleFrame` envelope — the actor boundary is a perfect-specificity
-seam ([criome ARCH §2 Invariant D](https://github.com/LiGoldragon/criome/blob/main/ARCHITECTURE.md)).
-Use **named-field** variants:
+seam. Use **named-field** variants — illustrative shape:
 
 ```rust
 pub enum Message {
-    Handshake { request: HandshakeRequest, reply_port: RpcReplyPort<HandshakeOutcome> },
-    Assert    { operation: AssertOperation, reply_port: RpcReplyPort<OutcomeMessage> },
-    DeferredVerb { verb: &'static str, milestone: &'static str,
-                   reply_port: RpcReplyPort<OutcomeMessage> },
+    SomeVerb        { payload: Payload,
+                      reply_port: RpcReplyPort<Outcome> },
+    SomeOtherVerb   { argument: ArgumentType,
+                      reply_port: RpcReplyPort<OtherReply> },
 }
 ```
 
@@ -95,7 +88,7 @@ impl Actor for Engine {
     async fn pre_start(&self, _myself: ActorRef<Self::Msg>, arguments: Arguments)
         -> std::result::Result<Self::State, ActorProcessingErr>
     {
-        Ok(State::new(arguments.sema))
+        Ok(State::new(arguments.dependency))
     }
 
     async fn handle(&self, _myself: ActorRef<Self::Msg>, message: Message,
@@ -103,8 +96,8 @@ impl Actor for Engine {
         -> std::result::Result<(), ActorProcessingErr>
     {
         match message {
-            Message::Assert { operation, reply_port } => {
-                let _ = reply_port.send(state.handle_assert(operation));
+            Message::SomeVerb { payload, reply_port } => {
+                let _ = reply_port.send(state.handle_some_verb(payload));
             }
             // ...
         }
@@ -164,12 +157,12 @@ there.
 
 ## Worker pools — `Vec<ActorRef<…>>` plus shared cursor
 
-A read pool is N spawned-linked siblings plus an `Arc<AtomicUsize>` cursor
+A worker pool is N spawned-linked siblings plus an `Arc<AtomicUsize>` cursor
 cloned into every dispatcher. Lock-free; no factory needed:
 
 ```rust
-let index = self.reader_cursor.fetch_add(1, Ordering::Relaxed) % self.readers.len();
-self.readers.get(index)
+let index = self.cursor.fetch_add(1, Ordering::Relaxed) % self.workers.len();
+self.workers.get(index)
 ```
 
 `Arc<Mutex<T>>` between actors is the smell; an uncontended atomic counter is
@@ -180,8 +173,7 @@ a coordination atom, not shared state in the dangerous sense.
 When the crate ships a one-shot CLI binary or wants tests without a tokio
 runtime, expose the dispatch as inherent methods on `State`. The async
 `handle` and the sync façade share the same per-verb method implementations
-— no duplication. See [`criome/src/engine.rs`](https://github.com/LiGoldragon/criome/blob/main/src/engine.rs)
-`State::handle_frame` / `handle_assert` / `handle_handshake`.
+— no duplication.
 
 Add a façade only when there's a non-actor consumer (binary, tests). Don't
 manufacture one for ceremony.
@@ -207,5 +199,5 @@ impl Daemon {
 
 - [`style.md` §Actors](style.md#actors-logical-units-with-ractor) — when to reach for one
 - [`programming/abstractions.md`](../programming/abstractions.md) — methods-on-types
-- [criome/src/{daemon,engine,reader,listener,connection}.rs](https://github.com/LiGoldragon/criome/tree/main/src) — canonical example
+- [criome](https://github.com/LiGoldragon/criome)'s `src/` — current working example of every pattern above
 - [ractor 0.15 docs](https://docs.rs/ractor/0.15) · [supervisor example](https://github.com/slawlor/ractor/blob/v0.15.6/ractor/examples/supervisor.rs)

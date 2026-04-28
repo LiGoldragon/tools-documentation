@@ -38,6 +38,14 @@ Curated daily-use docs for the tools Li works with. Read these before assuming h
 - [linkup/basic-usage.md](linkup/basic-usage.md) — Linkup web-search CLI: `linkup search "<q>" [--depth standard|deep|fast]`, grounded answers with citations. API key via gopass.
 - [substack/basic-usage.md](substack/basic-usage.md) — Publish Markdown posts to Substack: create/update/list/get/delete, image uploads, publication settings. Auth via `substack.sid` cookie env.
 
+## Style docs are patterns, not snapshots
+
+Docs under [`programming/`](programming/) and language-style docs under [`<language>/`](rust/) describe **patterns**. They must not embed specifics from any *current* downstream repo — no exact actor counts, no file-path listings, no concrete function or message-variant names that will rot as the example evolves. Reference an example repo as a one-line "see for current shape" pointer, not as authoritative structure the doc seems to claim is true forever.
+
+The same applies to cross-citations: a style doc should not invoke a downstream `ARCHITECTURE.md` to backstop its claims. The principle stands on its own; appeals-to-authority across repo boundaries rot when the cited doc restructures.
+
+Failure mode this closes: an agent reads "the canonical example has five actors / `src/foo.rs` / `handle_assert()`" or "[per X-repo's ARCHITECTURE §2]," treats those specifics as load-bearing, and propagates them into new code — even after the example has evolved or the cross-link has rotted. The pattern is what's load-bearing; the example is illustrative-now.
+
 ## Adding new docs
 
 When you research something non-obvious about these tools, write it as a new topic file in the appropriate subdir. Keep files small (~100 lines), one topic each, with the frontmatter from README.md (`source:`, `fetched:`, `trimmed:`). Prefer verbatim excerpts from upstream over paraphrase.
