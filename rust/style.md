@@ -587,9 +587,10 @@ don't `#[ignore]` without filing.
   `.gitignore`, and `LICENSE.md`. Upstream at
   `github.com/LiGoldragon/<name>`.
 - Serialization: `rkyv` for binary contracts between our Rust
-  components (storage, zero-copy reads); `serde` for wire-format
-  round-trips (e.g., `nexus-serde`, JSON at external boundaries).
-  Both derives can coexist on the same type when needed.
+  components (storage, zero-copy reads); `serde` only at external
+  boundaries that demand it (e.g., JSON for legacy interop).
+  Internal text formats use [`nota-codec`](https://github.com/LiGoldragon/nota-codec)'s
+  typed `Decoder` + `Encoder`, not serde.
 - `tokio` comes in automatically via ractor for any service with
   concurrent state. Plain sync is fine for one-shot CLIs and
   library crates.
@@ -641,9 +642,8 @@ packages.default = rustPlatform.buildRustPackage {
 };
 ```
 
-Used today by nota-serde → nota-serde-core. When the dep is later
-published to crates.io, drop the git URL and remove the
-outputHashes entry; pin by semver range instead.
+When the dep is later published to crates.io, drop the git URL
+and remove the outputHashes entry; pin by semver range instead.
 
 ## Documentation
 

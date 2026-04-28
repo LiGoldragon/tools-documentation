@@ -230,8 +230,7 @@ This rule pairs with two others that push the same direction:
   names exactly what flows through it — no wrapper enums that
   mix concerns, no string-tagged dispatch, no generic-record
   fallback. Same discipline: the type system carries the
-  meaning, not stringly-typed metadata. (Project enforcement in
-  [criome/ARCHITECTURE.md §2 Invariant D](https://github.com/LiGoldragon/criome/blob/main/ARCHITECTURE.md).)
+  meaning, not stringly-typed metadata.
 
 All three rules say the same thing in different domains: **the
 type system is the model**. Use it.
