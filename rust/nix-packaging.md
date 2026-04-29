@@ -167,8 +167,8 @@ crane builds all members at once by default. Filter to one binary with
 ```nix
 craneLib.buildPackage (commonArgs // {
   inherit cargoArtifacts;
-  cargoExtraArgs = "--bin lojix";
-  pname = "lojix";
+  cargoExtraArgs = "--bin forge";
+  pname = "forge";
 })
 ```
 

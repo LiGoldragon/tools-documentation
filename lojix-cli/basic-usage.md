@@ -69,7 +69,7 @@ that need root.
 For this to work the user must have an SSH key allowed to log into
 `root@localhost`. CriomOS sets this up for the primary user.
 
-The user-side projection still writes to `~/.cache/lojix/...`; the
+The user-side projection still writes to `~/.cache/forge/...`; the
 ssh-root step's nix-daemon resolves the same `/nix/store` (shared)
 and reads the user's cache files via the `--override-input
 horizon|system path:...` paths. So local builds done as the user
@@ -101,7 +101,7 @@ reboot, and the menu lets you opt out.
   Tracked in `bd CriomOS-4yt`.
 - **Streaming progress.** `nix build` output streams to your terminal
   via `stderr=inherit`; lojix-cli does not yet add structured
-  per-target progress. Tracked in `bd CriomOS-t50` / `lojix-auy`.
+  per-target progress. Tracked in `bd CriomOS-t50` / `forge-auy`.
 
 ## Common patterns
 
@@ -155,7 +155,7 @@ lojix-cli eval --cluster goldragon --node ouranos \
 ## See also
 
 - `lojix-cli/ARCHITECTURE.md` — internal actor topology, projection
-  semantics, the planned migration to the lojix daemon.
+  semantics, the planned migration to the forge daemon.
 - `lojix-cli/AGENTS.md` — bootstrap rules for working in the lojix-cli
   repo itself.
 - `nix/basic-usage.md` — when in doubt about a nix command shape.
