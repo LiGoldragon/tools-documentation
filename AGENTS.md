@@ -1,5 +1,7 @@
 # Agent instructions
 
+For project-wide architecture: [criome/ARCHITECTURE.md](https://github.com/LiGoldragon/criome/blob/main/ARCHITECTURE.md) — REQUIRED READING for every agent and human working in any sema-ecosystem repo.
+
 ## Version control: always push
 
 After every change in any repo under `~/git/`, push immediately. **Blanket authorization** — do not ask for confirmation.
@@ -27,7 +29,7 @@ Curated daily-use docs for the tools Li works with. Read these before assuming h
 - [programming/micro-components.md](programming/micro-components.md) — **One capability, one crate, one repo.** Every functional capability lives in its own repo with its own Cargo.toml, flake.nix, and tests; components communicate through typed protocols; each fits in a single LLM context window. Default to new crate, not editing existing. The criome workspace is the antithesis of monoliths — the failure mode this rule closes is agents bundling features into existing crates until the result is unmodifiable.
 
 **Language style:**
-- [rust/style.md](rust/style.md) — Rust object style: methods on types not free fns, typed newtypes for domain values, single-object I/O at boundaries, manual `Error` enums (no thiserror/anyhow), trait-domain rule, doc protocol.
+- [rust/style.md](rust/style.md) — Rust object style: methods on types not free fns, typed newtypes for domain values, single-object I/O at boundaries, typed `Error` enum per crate via `thiserror` (`anyhow`/`eyre` forbidden), trait-domain rule, doc protocol.
 - [rust/nix-packaging.md](rust/nix-packaging.md) — Canonical crane + fenix flake layout for any Rust crate: layered cargo-deps cache, toolchain pinned via `rust-toolchain.toml`, git-URL deps, workspace handling, `checks.default`.
 - [rust/ractor.md](rust/ractor.md) — Ractor 0.15 in CANON daemons: per-file four-piece template (Actor / State / Arguments / Message), per-verb typed `RpcReplyPort<T>` messages, supervision, self-cast loops, sync façade. Grounded in the criome example.
 - [rust/rkyv.md](rust/rkyv.md) — Rkyv 0.8 portable feature set across the workspace, derive-alias pattern when paired with serde, encode/decode API, type-adaptation gotchas (`PathBuf` etc.), schema-fragility limit + version-skew-guard discipline.
