@@ -80,7 +80,7 @@ write a report, commit.
 | `criome/ARCHITECTURE.md` | **Project-wide canonical.** Prose + diagrams only. High-level shape, invariants, relationships of the engine being built. |
 | `workspace/ARCHITECTURE.md` | **Dev environment.** Workspace conventions, role, layout. Points at criome for the project itself. |
 | `<repo>/ARCHITECTURE.md` | **Per-repo bird's-eye view.** Repo's role, owned-and-not-owned boundaries, code map, status. Points at criome by prose for cross-cutting context. |
-| `workspace/reports/NNN-*.md` | **Decision records + design syntheses.** Prose + visuals. |
+| `<repo>/reports/NNN-*.md` | **Decision records + design syntheses.** Prose + visuals. |
 | Each repo's source | **Implementation.** Rust code, tests, flakes, `Cargo.toml`. Type sketches as compiler-checked skeletons live here. |
 
 When a layer rule is violated, rewrite: move type sketches out
@@ -315,12 +315,13 @@ How to apply:
 
 ## Design reports — visuals, not code
 
-Reports in `workspace/reports/` explain, propose, analyse, or
-summarise. Their medium is **prose + visuals** — ASCII diagrams,
-swimlanes, flowcharts, tables, dependency graphs. Implementation
-code (Rust `impl` blocks, function bodies, struct definitions
-with methods, full Nix derivations) belongs in skeleton code in
-the relevant repo, not in a report.
+Reports in the `reports/` dir of the repo you are working in
+explain, propose, analyse, or summarise. Their medium is
+**prose + visuals** — ASCII diagrams, swimlanes, flowcharts,
+tables, dependency graphs. Implementation code (Rust `impl`
+blocks, function bodies, struct definitions with methods, full
+Nix derivations) belongs in skeleton code in the relevant repo,
+not in a report.
 
 **Why:** code in a design doc goes stale the moment it lands and
 the real type drifts; readers can't tell whether the report's
@@ -343,11 +344,12 @@ not about showing the shape of the thing the design is about.
 
 If the agent's final-session response would be more than very
 minimal (a few lines), write the substance as a report (in
-`workspace/reports/`) and keep the chat reply minimal — a one-line
-pointer at the report. Two reasons: (1) the Claude Code UI is a
-poor reading interface; files are easier; (2) the author reviews
-responses asynchronously while the agent moves to next work, so
-the substance must be in a stable, scrollable, file-backed place.
+the `reports/` dir of the repo you are working in) and keep the
+chat reply minimal — a one-line pointer at the report. Two
+reasons: (1) the Claude Code UI is a poor reading interface;
+files are easier; (2) the author reviews responses
+asynchronously while the agent moves to next work, so the
+substance must be in a stable, scrollable, file-backed place.
 
 Small reports are fine — the report doesn't have to be large.
 Acknowledgements, tool-result summaries, "done; pushed"
