@@ -130,22 +130,15 @@ dolt remote add origin https://github.com/<org>/<repo>.git
 dolt push origin main
 ```
 
-From SQL (e.g. from an app or `dolt sql-server`):
-
-```sql
-call dolt_clone('https://github.com/<org>/<repo>.git');
-use <repo>;
-select * from t;
-
-call dolt_commit('-Am', 'insert more data');
-call dolt_push('origin', 'main');
-```
-
 Pull is plain CLI:
 
 ```bash
 dolt pull origin main
 ```
+
+The same operations are available as SQL functions
+(`dolt_clone`, `dolt_commit`, `dolt_push`, …) for in-app use;
+the CLI is the workflow we use here.
 
 **Implication for us:** the `workspace` GitHub repo can host both the
 nix/source tree (pushed via `jj git push`) and a Dolt database (pushed via
