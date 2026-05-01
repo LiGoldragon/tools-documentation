@@ -403,6 +403,29 @@ Use `jj` for all VCS interactions.
 
 ---
 
+## Implicit authorization for missing publish steps
+
+When the user points out that an expected external side effect is
+missing, and that side effect is the obvious intended completion of
+the work just done, treat that statement as authorization to perform
+the missing publish step immediately.
+
+Canonical cases:
+
+- "I don't see the repo on my GitHub" → create/push the repo if the
+  work was "make a new repo".
+- "The PR isn't open" → open the PR if the work was "publish this
+  branch".
+- "I don't see the branch / commit / issue on the remote" → push the
+  missing VCS or bd remote state.
+
+The rule is about **obvious completion of already-requested work**,
+not about inventing unrelated side effects. Apply it when the missing
+step is the direct publish/export/remote-materialization leg of the
+task already in progress.
+
+---
+
 ## Commit message style
 
 Single line. Short. A short verb + scope, plus an optional short
