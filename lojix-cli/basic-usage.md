@@ -6,6 +6,13 @@ scope: how to use lojix-cli to build / deploy / inspect CriomOS systems; not the
 
 # lojix-cli basic usage
 
+## Use `lojix-cli`, not `lojix-cli-v2`
+
+`~/git/lojix-cli-v2` is a dev fork where the next-generation
+nota-native CLI and home-deploy work is being staged. **It is not
+usable yet.** All deploy / build / eval flows go through the v1
+`lojix-cli` binary documented here. When v2 ships, this note moves.
+
 ## The one concept that matters
 
 `lojix-cli` projects a **cluster proposal nota** (e.g. `goldragon/datom.nota`)
