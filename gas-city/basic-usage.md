@@ -8,10 +8,10 @@ scope: how to operate a Gas City — start/stop, attach to agents, talk to them,
 
 ## The shape
 
-A city is a directory (e.g. `~/philosophy-city`). When it's running:
+A city is a directory (e.g. `~/Criopolis`). When it's running:
 
 - **One tmux server per city**, with socket name = city name. So
-  `tmux -L philosophy-city ls` shows every agent's tmux session.
+  `tmux -L Criopolis ls` shows every agent's tmux session.
 - **One Unix supervisor** (`gascity-supervisor.service`) running all
   cities you've started. Per-user systemd service.
 - **One dolt sql-server** per city, holding the beads database.

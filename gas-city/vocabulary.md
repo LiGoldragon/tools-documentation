@@ -17,7 +17,7 @@ Use this as a glossary. Layers go from biggest (city) to smallest
 |---|---|
 | **city** | A directory on disk. Contains `city.toml` + `pack.toml` + `agents/` + `.gc/` runtime state. The unit you `gc start` and `gc stop`. |
 | **pack** | A reusable, portable bundle of agents/formulas/orders/scripts. Lives at the city root or under `packs/<name>/`. Cities import packs via `[imports.<binding>]`. Same pack can be used by many cities. |
-| **rig** | An external project (repo) registered with the city via `gc rig add <path>`. Each rig gets its own beads database and ID prefix. A city can have zero rigs (e.g. philosophy-city). |
+| **rig** | An external project (repo) registered with the city via `gc rig add <path>`. Each rig gets its own beads database and ID prefix. A city can have zero rigs (e.g. Criopolis). |
 | **workspace** | The `name` field of the city, used for routing and display. |
 | **builtin pack** | Packs that ship inside the `gc` binary and are materialized into `.gc/system/packs/<name>/` at start. The current set: `bd` (beads exec provider) and `dolt` (managed dolt server). Not user-editable. |
 
@@ -240,6 +240,6 @@ Custom keys are fine — `bd update <id> --set-metadata key=value`.
 
 - **`gc.routed_to`** — the convention that makes sling work. If a bead has it, the named agent's default work_query will pick it up.
 - **`mol-`** prefix on formulas — gas-city convention for molecule-producing formulas (`mol-do-work`, `mol-polecat-base`, `mol-dog-doctor`).
-- **`hq-`** prefix — Gastown-style convention for city-level (no-rig) beads. The philosophy-city uses the workspace's auto-prefix `pc-`.
+- **`hq-`** prefix — Gastown-style convention for city-level (no-rig) beads. Criopolis uses the workspace's auto-prefix `cr-` (older `pc-` beads from before the May-2026 rename persist).
 - **`gc trace`** — verbose reconciler decision log. For debugging "why didn't my session restart". Don't reach for it until you need it.
 - **`gc doctor`** — health check across deps, config, supervisor, hooks. Run after any environmental change.
