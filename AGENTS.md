@@ -387,31 +387,20 @@ How to apply:
 
 ---
 
-## Version control: Git-backed Jujutsu
+## Version control
 
-After every change in any tracked repo, push immediately.
-**Blanket authorization** — proceed without asking for
-confirmation.
+Read the workspace's `skills/version-control.md`. After every
+change in any tracked repo, commit and push immediately —
+blanket authorization. Push per logical commit. Use `jj` for
+local history work; Git remains the remote/storage layer. If a
+repo lacks `.jj/`, run `jj git init --colocate` after claiming
+it through the orchestration protocol.
 
-```
-jj commit -m '<msg>' && jj bookmark set main -r @- && jj git push --bookmark main
-```
-
-Push per logical commit. Unpushed work is invisible to other
-machines and to anyone consuming the repo as an input.
-
-Li repositories and forks are Git-backed colocated Jujutsu
-repositories. If a Git-backed Li repo is not JJ-initialized,
-claim the repo through the workspace orchestration protocol and
-run `jj git init --colocate`.
-
-Use `jj` for VCS work: status, diff, commit, rebase,
-cherry-pick, merge, undo, and push. Use plain `git` for remote
-configuration and for tooling that needs Git directly. The
-reason is structural: Jujutsu makes the working copy a change,
-gives changes stable change IDs, and makes rebases,
-cherry-picks, and merges operate on those changes. Git remains
-the storage and remote compatibility layer.
+The skill carries the canonical one-liner, the logical-commit
+grouping criteria, the commit-message style (short verb +
+scope; one short clause), and the standard fixes for routine
+obstacles (HTTPS push failure, divergence, uncommitted state,
+missing `.jj/`).
 
 ---
 
@@ -436,25 +425,6 @@ work**, not about inventing unrelated side effects. Apply it
 when the missing step is the direct
 publish/export/remote-materialization leg of the task already
 in progress.
-
----
-
-## Commit message style
-
-Single line. Short. A short verb + scope, plus an optional
-short clause naming the change. The repo is implicit (the
-commit is in the repo). Detail lives in the diff and the
-report.
-
-Examples:
-
-- `Slot<T> migration`
-- `report add 119`
-- `reader for typed slots`
-- `AGENTS commit-style shortened`
-
-If a single change touches multiple repos, each repo gets its
-own short commit.
 
 ---
 
