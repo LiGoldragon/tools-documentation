@@ -109,7 +109,7 @@ Colocation means jj and git share the same `.git/`; both CLIs work in the repo.
 ```
 jj st                                        # see state
 # ... edit files ...
-jj commit -m '(<repo> <subject>) (<note>)'   # commit, Mentci-style message
+jj commit -m '<short verb + scope>'          # commit
 jj bookmark set main -r @-                   # point main at what we just committed
 jj git push --bookmark main
 ```

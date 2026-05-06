@@ -50,10 +50,10 @@ nix log <drv-or-store-path>              # retrieve logs from a past build
 Prefer lock-side pinning — keep `flake.nix` generic, record the exact rev in `flake.lock`:
 
 ```
-nix flake lock --override-input nixpkgs github:criome/nixpkgs/<rev>
+nix flake lock --override-input nixpkgs github:<org>/nixpkgs/<rev>
 ```
 
-This rewrites the `nixpkgs` entry in `flake.lock` while `flake.nix` still says `github:NixOS/nixpkgs?ref=nixos-unstable`. Our CriomOS / mentci-* flakes do exactly this: nixpkgs is pinned to `criome/nixpkgs` at a known rev in `flake.lock`, and any machine can re-pin by running `nix flake lock --override-input` again. Verify it took by inspecting `flake.lock` (look for the `locked` block under the input).
+This rewrites the `nixpkgs` entry in `flake.lock` while `flake.nix` still says `github:NixOS/nixpkgs?ref=nixos-unstable`. Any machine can re-pin by running `nix flake lock --override-input` again. Verify it took by inspecting `flake.lock` (look for the `locked` block under the input).
 
 To reuse the rev another flake already pins — without ever typing a hash — use `--inputs-from`:
 
