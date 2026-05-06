@@ -352,6 +352,11 @@ Acknowledgements, tool-result summaries, "done; pushed"
 confirmations don't need reports. Anything that explains,
 proposes, analyses, or summarises does.
 
+**Tone in chat replies: state results.** Don't narrate process,
+don't apologise, don't pre-announce what you're about to do.
+The chat reply is for what changed and what's next. The *how*
+and the *why* belong in the report, not in chat.
+
 **Use relative paths in reports.** When a report references
 files in sibling repos, link via `../<repo>/...` (the
 workspace symlinks). The relative path resolves in editors and
