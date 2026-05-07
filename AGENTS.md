@@ -394,7 +394,7 @@ How to apply:
 
 ## Version control
 
-Read the workspace's `skills/version-control.md`. After every
+Read the workspace's `skills/jj.md`. After every
 change in any tracked repo, commit and push immediately —
 blanket authorization. Push per logical commit. Use `jj` for
 local history work; Git remains the remote/storage layer. If a
