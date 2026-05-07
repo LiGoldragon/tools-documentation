@@ -475,6 +475,12 @@ based on verified upstream sources.
 - `skills/rust-discipline.md` — Rust-specific application
   (methods on types, no ZST holders, domain newtypes,
   one-object in/out, error enums).
+- `skills/nix-discipline.md` — Nix-specific discipline
+  (flake input forms, lock-side pinning, store-path hygiene,
+  `nix run` over `cargo install`, `nix flake check` as
+  pre-commit).
+- `skills/language-design.md` — Designing a text notation,
+  request language, schema, or query surface.
 
 **Language style:**
 - `rust/style.md` — Rust object style: methods on types, typed

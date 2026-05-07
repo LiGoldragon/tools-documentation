@@ -87,20 +87,12 @@ home-manager news                           # upstream news since last build
 
 ## Operational rules
 
-**Never reference raw `/nix/store/<hash>-<name>/...` paths in commands or output.** Store hashes change on every rebuild, so any recorded path becomes stale immediately; they're long and noisy; stable aliases exist for everything you need to point at.
-
-- When naming a binary: use the plain name (`dolt`, `bd`) or the profile path (`~/.nix-profile/bin/dolt`, `/etc/profiles/per-user/li/bin/...`) — never the resolved `/nix/store/...` path.
-- When tool output (`ps`, `env`, `ls`) contains store paths, don't echo them back in text; refer to the thing by package name.
-- If a store path is actually load-bearing for the point being made ("two different `dolt` versions are coexisting"), say so explicitly — don't just paste the hash.
-
-**When a tool isn't on PATH** (rustfmt, clippy, ripgrep, jq, etc.), invoke it via `nix run nixpkgs#<pkg> -- <args>`. Never reach for `cargo install`, `pip install`, `npm install -g`, distro package managers, or hand-written shell-script substitutes.
-
-The setup is nix-managed end-to-end. Out-of-nix installs pollute the environment, are non-reproducible, and bypass the system's invariants.
-
-- First call to a missing tool: `nix run nixpkgs#<pkg> -- <args>`
-- For repeat use in a session, the same command works fine — nix caches it.
-- Reserve writing replacement scripts for cases where no upstream tool exists.
-- Don't fall back to a bespoke Python/sed substitute "for speed" — wait for nix to fetch.
+The discipline (when to use which input form, lock-side
+pinning, no raw store paths in prose, `nix run nixpkgs#<pkg>`
+for missing tools, `nix flake check` as the canonical
+pre-commit runner, never hand-edit `flake.lock`) lives in the
+workspace's `skills/nix-discipline.md`. This file is the CLI
+reference; the skill is the *how-to-use*.
 
 ## Want more
 
