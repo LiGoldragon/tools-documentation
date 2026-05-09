@@ -124,6 +124,53 @@ profile = "default"
 explicit version (`channel = "1.85"`) at release time when bit-for-bit
 reproducibility matters.
 
+## Workspace fenix lockstep
+
+When the workspace contains many Rust crates, every crate's
+`flake.lock` independently pins its own fenix rev. Without
+coordination, those locks drift across update windows: same Rust
+version, different fenix overlays, different rustc store paths,
+one ~200 MB rustc redownload per divergent rev. On a slim
+connection, the cost compounds quickly.
+
+The workspace convention: **one canonical Rust repo holds the
+fenix lock; every other Rust repo copies it via
+`nix flake lock --inputs-from`.**
+
+In the LiGoldragon workspace today, the canonical fenix-lock
+source is **`signal-core`**. All other Rust crates inherit from
+its `flake.lock`. To bump fenix workspace-wide:
+
+```sh
+cd /git/github.com/LiGoldragon/signal-core
+nix flake update fenix
+jj commit -m 'bump fenix' && jj bookmark set main -r @- && jj git push --bookmark main
+~/primary/tools/sync-rust-fenix
+```
+
+`tools/sync-rust-fenix` walks every Rust crate that has a
+`fenix` input in its `flake.nix` and runs:
+
+```sh
+nix flake lock --inputs-from path:/git/github.com/LiGoldragon/signal-core
+```
+
+`--inputs-from` resolves any matching input (only `fenix` here,
+since other inputs differ legitimately across repos) using the
+canonical flake's locked entry. After the cascade, every Rust
+repo references the same fenix rev → one rustc store path →
+one download per machine.
+
+When creating a **new Rust repo** that follows this template,
+run the sync once after the first `flake.lock` lands so the new
+repo joins the lockstep. The reasoning + ownership for the
+script lives in
+`~/primary/reports/designer/99-shared-rust-toolchain-pin-proposal.md`.
+
+The mechanism (`--inputs-from`) is documented in
+`~/primary/skills/nix-discipline.md` §"Lock-side pinning"; this
+section names the workspace-specific application of it.
+
 ## Git-URL deps with crane
 
 Crane needs an explicit `cargoVendorDir` (it doesn't accept the
