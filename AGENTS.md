@@ -444,8 +444,8 @@ based on verified upstream sources.
 - `rust/nix-packaging.md` — Canonical crane + fenix flake
   layout for Rust crates.
 - the active workspace's actor-system skill — current runtime,
-  mailbox, supervision, and handle discipline. `rust/ractor.md`
-  is a historical Ractor reference, not a default pattern.
+  mailbox, supervision, and handle discipline. `rust/kameo.md`
+  is the current Rust actor runtime tool reference.
 - `rust/rkyv.md` — Rkyv 0.8 portable feature set,
   derive-alias pattern, encode/decode API, schema-fragility
   limit.

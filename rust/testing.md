@@ -1,6 +1,6 @@
 ---
-source: (our own) — distilled from working tests in criome / hexis / persona-message
-fetched: 2026-05-07
+source: (our own) — distilled from working tests and the active Kameo actor discipline
+fetched: 2026-05-11
 ---
 
 # Rust testing — patterns
@@ -11,32 +11,24 @@ toolchain reference for the patterns: where tests live, what
 they exercise, how they run, what's worth mocking and what
 isn't.
 
-## The principle — sync façade on State
+## The principle - direct domain methods on the actor
 
-The cleanest unit for testing is the `State` struct, not the
-actor wrapper around it. State carries the real method (sync
-and total); the actor's `handle` is a thin shell that delegates
-to State. **Tests call `State` directly — no actor harness, no
-tokio runtime, no mocking.**
+The cleanest unit for most actor tests is still the synchronous
+domain method, but Kameo changes where that method lives:
+`Self` is the actor. Put the real verb on the data-bearing actor
+type, and let the async message handler be the thin shell that
+calls it. **Tests call the actor's domain method directly - no
+actor harness, no tokio runtime, no mocking - unless the test is
+about mailbox, lifecycle, or supervision behavior.**
 
 ```rust
-// production code — the actor
-async fn handle(
-    &self,
-    _myself: ActorRef<Self::Msg>,
-    message: Message,
-    state: &mut State,
-) -> std::result::Result<(), ActorProcessingErr> {
-    match message {
-        Message::Run => {
-            let _ = state.apply();
-        }
-    }
-    Ok(())
+// production code - the data-bearing actor
+pub struct Reconciler {
+    phase: Phase,
+    target: TargetPath,
 }
 
-// production code — the real method on State
-impl State {
+impl Reconciler {
     pub fn apply(&mut self) -> Result<(), Error> {
         let result = self.apply_inner();
         self.phase = match &result {
@@ -46,30 +38,47 @@ impl State {
         result
     }
 }
+
+pub struct RunReconciliation;
+
+impl Message<RunReconciliation> for Reconciler {
+    type Reply = Result<(), Error>;
+
+    async fn handle(
+        &mut self,
+        _message: RunReconciliation,
+        _context: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        self.apply()
+    }
+}
 ```
 
 ```rust
-// tests/reconciler.rs — direct, no runtime
-struct Fixture { arguments: Arguments }
+// tests/reconciler.rs - direct, no runtime
+struct Fixture {
+    target: TargetPath,
+}
 
 impl Fixture {
     fn apply(&self) -> Result<(), Error> {
-        State::new(self.arguments.clone()).apply()
+        let mut reconciler = Reconciler::new(self.target.clone());
+        reconciler.apply()
     }
 }
 
 #[test]
 fn applies_a_proposal_to_a_target_file() {
-    let fixture = Fixture { arguments: … };
+    let fixture = Fixture { target: … };
     fixture.apply().unwrap();
     // assert the side effect on disk
 }
 ```
 
-This pattern works because `State` is the noun and `apply()`
-is the verb on it. The actor harness is only needed when
-testing the message-passing or supervision behavior itself.
-For everything else, test `State`.
+This pattern works because the data-bearing actor is the noun and
+`apply()` is the verb on it. The actor harness is only needed when
+testing the message-passing, mailbox, lifecycle, or supervision
+behavior itself. For everything else, test the domain method.
 
 ## Tests live in separate files
 
@@ -208,17 +217,19 @@ the invariant true.
 
 ## Testing actors directly (when you must)
 
-The sync-façade-on-State pattern handles 95% of cases. The
-remaining 5% — testing supervision behavior, mailbox order,
-self-cast loops — requires a real actor runtime. For those:
+The direct-domain-method pattern handles most cases. The
+remaining cases - testing supervision behavior, mailbox order,
+fallible `tell`, delegated replies, links, registry, or lifecycle -
+require a real actor runtime. For those:
 
 - Use `tokio::test` to set up the runtime.
-- Use the actor's `*Handle::start(arguments)` to spawn the
-  full topology.
-- Cast / call into the root via `actor_ref()`.
-- Assert observable side effects (file system state, replies
-  on `RpcReplyPort`s the test holds).
-- Tear down with `*Handle::wait(.)` after sending a `Stop`.
+- Spawn the actor or full topology with Kameo's real spawn surface.
+- Send messages through `ActorRef::ask(...)` or `ActorRef::tell(...)`.
+- Assert observable side effects: file system state, returned replies,
+  `SendError` variants, trace records, or shutdown results.
+- Tear down through the component's public lifecycle method, an
+  explicit stop message, or Kameo shutdown waiting when the test owns
+  the actor directly.
 
 Don't mock supervisors or fake mailboxes. The selected actor runtime
 is fast enough to run for real; that is cheaper than building a
@@ -230,6 +241,7 @@ parallel mock harness.
   cross-crate deps).
 - the active workspace's actor-system skill — actor framework usage,
   supervision, and public consumer surfaces.
+- `kameo.md` — current Rust actor runtime tool reference.
 - `nix-packaging.md` — canonical crane + fenix flake; the
   `checks.default` wiring this file builds on.
 - `~/primary/skills/rust-discipline.md` — the discipline these

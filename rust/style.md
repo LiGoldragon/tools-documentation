@@ -18,8 +18,8 @@ fetched: 2026-04-23
 > Neighboring lore files: `nix-packaging.md` for crane +
 > fenix; `rkyv.md` for the binary contract format;
 > `testing.md` for testing patterns. Actor runtime choice lives
-> in the active workspace's actor-system skill; `ractor.md` is a
-> historical reference, not the default.
+> in the active workspace's actor-system skill; Kameo tool notes
+> live in `kameo.md`.
 
 ## Cargo.toml
 
